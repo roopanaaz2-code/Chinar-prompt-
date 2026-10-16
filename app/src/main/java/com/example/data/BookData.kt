@@ -7,7 +7,9 @@ data class PromptItem(
     val category: String,
     val title: String,
     val type: String, // "IMAGE PROMPT" or "VIDEO PROMPT"
-    val text: String
+    val text: String,
+    val imageUri: String? = null,
+    val isCustom: Boolean = false
 )
 
 data class CategoryMeta(

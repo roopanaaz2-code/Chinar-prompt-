@@ -78,7 +78,8 @@ fun SearchScreen(
     val filteredResults by remember(query, selectedFilter) {
         derivedStateOf {
             val q = query.trim().lowercase()
-            BookRepository.allPrompts.filter { prompt ->
+            val allItems = BookRepository.allPrompts + com.example.data.PreferencesManager(context).getCustomPrompts()
+            allItems.filter { prompt ->
                 val matchesType = when (selectedFilter) {
                     "IMAGE" -> prompt.type == "IMAGE PROMPT"
                     "VIDEO" -> prompt.type == "VIDEO PROMPT"

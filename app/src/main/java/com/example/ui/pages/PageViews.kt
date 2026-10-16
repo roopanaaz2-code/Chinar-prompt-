@@ -4,11 +4,11 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,22 +30,26 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,69 +65,114 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.R
 import com.example.data.BookPage
 import com.example.data.BookRepository
 import com.example.data.PageType
+import com.example.data.PreferencesManager
 import com.example.data.PromptItem
+import com.example.ui.screens.ImageViewerDialog
 import com.example.ui.theme.ChinarGold
 import com.example.ui.theme.ChinarCrimson
 import com.example.ui.theme.ChinarFlame
+import java.io.File
 
 @Composable
 fun PageDispatcher(
     page: BookPage,
     fontScale: Float,
     isBookmarked: Boolean,
+    prefs: PreferencesManager,
+    customPromptsForPage: List<PromptItem>,
+    customBackgroundPath: String?,
     onToggleBookmark: () -> Unit,
     onNavigateToPage: (Int) -> Unit,
     isPromptFavorite: (String) -> Boolean,
-    onToggleFavoritePrompt: (String) -> Unit
+    onToggleFavoritePrompt: (String) -> Unit,
+    onOpenAddPrompt: () -> Unit,
+    onOpenBackgroundCustomizer: () -> Unit,
+    onPromptImageUpdated: (promptId: String, newPath: String?) -> Unit,
+    onDeleteCustomPrompt: (promptId: String) -> Unit
 ) {
-    when (page.pageType) {
-        is PageType.Cover -> {
-            CoverPageView(
-                onStartReading = { onNavigateToPage(2) },
-                onOpenToc = { onNavigateToPage(2) }
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Custom Page Background if set by user
+        if (customBackgroundPath != null) {
+            AsyncImage(
+                model = File(customBackgroundPath),
+                contentDescription = "Custom Page Background",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            // Legibility overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Black.copy(alpha = 0.70f),
+                                Color.Black.copy(alpha = 0.85f)
+                            )
+                        )
+                    )
             )
         }
-        is PageType.HowToAndToc1 -> {
-            HowToAndToc1View(
-                fontScale = fontScale,
-                onNavigateToPage = onNavigateToPage
-            )
-        }
-        is PageType.Toc2 -> {
-            Toc2View(
-                fontScale = fontScale,
-                onNavigateToPage = onNavigateToPage
-            )
-        }
-        is PageType.Prompts -> {
-            PromptsPageView(
-                page = page,
-                fontScale = fontScale,
-                isPromptFavorite = isPromptFavorite,
-                onToggleFavoritePrompt = onToggleFavoritePrompt
-            )
-        }
-        is PageType.Checklist -> {
-            ChecklistPageView(
-                fontScale = fontScale,
-                onReturnToCover = { onNavigateToPage(1) },
-                onOpenToc = { onNavigateToPage(2) }
-            )
+
+        // Page content
+        when (page.pageType) {
+            is PageType.Cover -> {
+                CoverPageView(
+                    onStartReading = { onNavigateToPage(2) },
+                    onOpenToc = { onNavigateToPage(2) },
+                    onOpenBackgroundCustomizer = onOpenBackgroundCustomizer
+                )
+            }
+            is PageType.HowToAndToc1 -> {
+                HowToAndToc1View(
+                    fontScale = fontScale,
+                    onNavigateToPage = onNavigateToPage,
+                    onOpenBackgroundCustomizer = onOpenBackgroundCustomizer
+                )
+            }
+            is PageType.Toc2 -> {
+                Toc2View(
+                    fontScale = fontScale,
+                    onNavigateToPage = onNavigateToPage,
+                    onOpenBackgroundCustomizer = onOpenBackgroundCustomizer
+                )
+            }
+            is PageType.Prompts -> {
+                PromptsPageView(
+                    page = page,
+                    fontScale = fontScale,
+                    prefs = prefs,
+                    customPrompts = customPromptsForPage,
+                    isPromptFavorite = isPromptFavorite,
+                    onToggleFavoritePrompt = onToggleFavoritePrompt,
+                    onOpenAddPrompt = onOpenAddPrompt,
+                    onOpenBackgroundCustomizer = onOpenBackgroundCustomizer,
+                    onPromptImageUpdated = onPromptImageUpdated,
+                    onDeleteCustomPrompt = onDeleteCustomPrompt
+                )
+            }
+            is PageType.Checklist -> {
+                ChecklistPageView(
+                    fontScale = fontScale,
+                    onReturnToCover = { onNavigateToPage(1) },
+                    onOpenToc = { onNavigateToPage(2) },
+                    onOpenBackgroundCustomizer = onOpenBackgroundCustomizer
+                )
+            }
         }
     }
 }
@@ -131,7 +180,8 @@ fun PageDispatcher(
 @Composable
 fun CoverPageView(
     onStartReading: () -> Unit,
-    onOpenToc: () -> Unit
+    onOpenToc: () -> Unit,
+    onOpenBackgroundCustomizer: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -158,7 +208,6 @@ fun CoverPageView(
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
-                    // Gradient overlay
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -171,7 +220,6 @@ fun CoverPageView(
                                 )
                             )
                     )
-                    // Badge over cover
                     Row(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
@@ -200,7 +248,6 @@ fun CoverPageView(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Book Title
             Text(
                 text = "THE MODERN AI\nPROMPT BOOK",
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -214,7 +261,6 @@ fun CoverPageView(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Subtitle Tagline
             Text(
                 text = "100+ Ready-to-Use IMAGE & VIDEO Prompts",
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -236,7 +282,6 @@ fun CoverPageView(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Slogan Chip
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(12.dp),
@@ -254,19 +299,17 @@ fun CoverPageView(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Stats row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 StatCard(count = "28", label = "Pages", color = ChinarGold)
-                StatCard(count = "119", label = "Prompts", color = ChinarFlame)
+                StatCard(count = "119+", label = "Prompts", color = ChinarFlame)
                 StatCard(count = "12", label = "Categories", color = ChinarCrimson)
             }
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Start reading CTA
             Button(
                 onClick = onStartReading,
                 modifier = Modifier
@@ -290,16 +333,33 @@ fun CoverPageView(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedButton(
-                onClick = onOpenToc,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(16.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = ChinarGold)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Browse Table of Contents", color = MaterialTheme.colorScheme.onBackground)
+                OutlinedButton(
+                    onClick = onOpenToc,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = ChinarGold, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Contents", color = MaterialTheme.colorScheme.onBackground, fontSize = 13.sp)
+                }
+
+                OutlinedButton(
+                    onClick = onOpenBackgroundCustomizer,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.Wallpaper, contentDescription = null, tint = ChinarFlame, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Change BG", color = MaterialTheme.colorScheme.onBackground, fontSize = 13.sp)
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -336,7 +396,8 @@ fun StatCard(count: String, label: String, color: Color) {
 @Composable
 fun HowToAndToc1View(
     fontScale: Float,
-    onNavigateToPage: (Int) -> Unit
+    onNavigateToPage: (Int) -> Unit,
+    onOpenBackgroundCustomizer: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -344,12 +405,20 @@ fun HowToAndToc1View(
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         item {
-            // Header
-            Text(
-                text = "How to Use This Book",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "How to Use This Book",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                IconButton(onClick = onOpenBackgroundCustomizer) {
+                    Icon(Icons.Default.Wallpaper, contentDescription = "Change Background", tint = ChinarGold)
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -369,7 +438,6 @@ fun HowToAndToc1View(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Reusable Quality Add-On
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -410,7 +478,6 @@ fun HowToAndToc1View(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // Categories 1 to 6
         items(BookRepository.categories.take(6)) { cat ->
             CategoryCardItem(category = cat, onNavigateToPage = onNavigateToPage)
             Spacer(modifier = Modifier.height(10.dp))
@@ -425,7 +492,8 @@ fun HowToAndToc1View(
 @Composable
 fun Toc2View(
     fontScale: Float,
-    onNavigateToPage: (Int) -> Unit
+    onNavigateToPage: (Int) -> Unit,
+    onOpenBackgroundCustomizer: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -433,11 +501,20 @@ fun Toc2View(
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         item {
-            Text(
-                text = "Contents — Part 2",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Contents — Part 2",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                IconButton(onClick = onOpenBackgroundCustomizer) {
+                    Icon(Icons.Default.Wallpaper, contentDescription = "Change Background", tint = ChinarGold)
+                }
+            }
 
             Spacer(modifier = Modifier.height(6.dp))
 
@@ -450,7 +527,6 @@ fun Toc2View(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Categories 7 to 12
         items(BookRepository.categories.drop(6)) { cat ->
             CategoryCardItem(category = cat, onNavigateToPage = onNavigateToPage)
             Spacer(modifier = Modifier.height(10.dp))
@@ -569,11 +645,21 @@ fun BulletItem(text: String, fontScale: Float) {
 fun PromptsPageView(
     page: BookPage,
     fontScale: Float,
+    prefs: PreferencesManager,
+    customPrompts: List<PromptItem>,
     isPromptFavorite: (String) -> Boolean,
-    onToggleFavoritePrompt: (String) -> Unit
+    onToggleFavoritePrompt: (String) -> Unit,
+    onOpenAddPrompt: () -> Unit,
+    onOpenBackgroundCustomizer: () -> Unit,
+    onPromptImageUpdated: (promptId: String, newPath: String?) -> Unit,
+    onDeleteCustomPrompt: (promptId: String) -> Unit
 ) {
     val categoryMeta = BookRepository.categories.find { it.name == page.category }
     val categoryColor = categoryMeta?.let { Color(it.colorHex) } ?: ChinarGold
+
+    val combinedPrompts = remember(page.prompts, customPrompts) {
+        page.prompts + customPrompts
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -581,7 +667,7 @@ fun PromptsPageView(
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         item {
-            // Category Badge Header
+            // Category Badge Header with Add Prompt & Change BG icons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -602,30 +688,57 @@ fun PromptsPageView(
                     )
                 }
 
-                Text(
-                    text = "PAGE ${page.pageNumber} OF 28",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onOpenAddPrompt, modifier = Modifier.size(34.dp)) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Custom Prompt", tint = ChinarGold)
+                    }
+                    IconButton(onClick = onOpenBackgroundCustomizer, modifier = Modifier.size(34.dp)) {
+                        Icon(Icons.Default.Wallpaper, contentDescription = "Change Background", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text(
+                        text = "PAGE ${page.pageNumber}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
         }
 
-        items(page.prompts) { prompt ->
+        items(combinedPrompts) { prompt ->
+            val attachedImg = prompt.imageUri ?: prefs.getPromptImageUri(prompt.id)
+
             PromptCard(
                 prompt = prompt,
                 categoryColor = categoryColor,
                 fontScale = fontScale,
+                attachedImagePath = attachedImg,
+                prefs = prefs,
                 isFavorite = isPromptFavorite(prompt.id),
-                onToggleFavorite = { onToggleFavoritePrompt(prompt.id) }
+                onToggleFavorite = { onToggleFavoritePrompt(prompt.id) },
+                onImageUpdated = { newPath -> onPromptImageUpdated(prompt.id, newPath) },
+                onDelete = if (prompt.isCustom) { { onDeleteCustomPrompt(prompt.id) } } else null
             )
             Spacer(modifier = Modifier.height(14.dp))
         }
 
         item {
-            Spacer(modifier = Modifier.height(50.dp))
+            // Inline button to add custom prompt
+            OutlinedButton(
+                onClick = onOpenAddPrompt,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = ChinarGold)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("+ Add Custom Prompt to ${page.category}", color = MaterialTheme.colorScheme.onSurface)
+            }
+            Spacer(modifier = Modifier.height(60.dp))
         }
     }
 }
@@ -635,11 +748,37 @@ fun PromptCard(
     prompt: PromptItem,
     categoryColor: Color,
     fontScale: Float,
+    attachedImagePath: String?,
+    prefs: PreferencesManager,
     isFavorite: Boolean,
-    onToggleFavorite: () -> Unit
+    onToggleFavorite: () -> Unit,
+    onImageUpdated: (String?) -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     var copiedRecently by remember { mutableStateOf(false) }
+    var viewingFullImage by remember { mutableStateOf(false) }
+
+    // Photo picker to attach or replace generated picture
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val savedPath = prefs.saveImageToInternalStorage(uri, "prompt_${prompt.id}")
+            if (savedPath != null) {
+                prefs.setPromptImageUri(prompt.id, savedPath)
+                onImageUpdated(savedPath)
+                Toast.makeText(context, "Generated picture attached to prompt!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    if (viewingFullImage && attachedImagePath != null) {
+        ImageViewerDialog(
+            imagePath = attachedImagePath,
+            onDismiss = { viewingFullImage = false }
+        )
+    }
 
     Card(
         shape = RoundedCornerShape(18.dp),
@@ -648,12 +787,11 @@ fun PromptCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Top row: Title + Prompt Number + Favorite button
+            // Header Row: Global # + Title + Type + Star + Delete
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Prompt Number badge
                 Surface(
                     color = categoryColor.copy(alpha = 0.2f),
                     shape = CircleShape,
@@ -672,12 +810,30 @@ fun PromptCard(
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = prompt.title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp * fontScale,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = prompt.title,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp * fontScale,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (prompt.isCustom) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                color = ChinarGold.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = "USER",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ChinarGold,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
                     Text(
                         text = prompt.type,
                         fontSize = 10.sp,
@@ -687,16 +843,81 @@ fun PromptCard(
                     )
                 }
 
-                IconButton(onClick = onToggleFavorite) {
+                IconButton(onClick = onToggleFavorite, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
                         contentDescription = "Favorite",
                         tint = if (isFavorite) ChinarGold else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
+                if (onDelete != null) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Custom Prompt",
+                            tint = Color.Red.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
+
+            // Attached Generated Result Picture Thumbnail (if available)
+            if (attachedImagePath != null) {
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(170.dp)
+                        .clickable { viewingFullImage = true }
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AsyncImage(
+                            model = File(attachedImagePath),
+                            contentDescription = "Generated AI Result",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        // Label badge
+                        Surface(
+                            color = Color.Black.copy(alpha = 0.65f),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Visibility, contentDescription = null, tint = ChinarGold, modifier = Modifier.size(12.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Generated Result (Tap to view)", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        // Remove image button
+                        IconButton(
+                            onClick = {
+                                prefs.setPromptImageUri(prompt.id, null)
+                                onImageUpdated(null)
+                                Toast.makeText(context, "Attached picture removed", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(6.dp)
+                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                .size(28.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Remove Picture", tint = Color.White, modifier = Modifier.size(14.dp))
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
 
             // Prompt text container
             Surface(
@@ -716,11 +937,11 @@ fun PromptCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Action row: Copy Prompt button & Share
+            // Action row: Copy Prompt button, Attach Picture, Share
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
                     onClick = {
@@ -735,7 +956,7 @@ fun PromptCard(
                         containerColor = if (copiedRecently) Color(0xFF10B981) else categoryColor,
                         contentColor = Color.White
                     ),
-                    modifier = Modifier.height(40.dp)
+                    modifier = Modifier.height(40.dp).weight(1f)
                 ) {
                     Icon(
                         imageVector = if (copiedRecently) Icons.Default.Check else Icons.Default.ContentCopy,
@@ -747,6 +968,30 @@ fun PromptCard(
                         text = if (copiedRecently) "Copied!" else "Copy Prompt",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Attach / Change Picture Button
+                OutlinedButton(
+                    onClick = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(40.dp)
+                ) {
+                    Icon(
+                        imageVector = if (attachedImagePath != null) Icons.Default.Image else Icons.Default.AddPhotoAlternate,
+                        contentDescription = "Attach Picture",
+                        modifier = Modifier.size(16.dp),
+                        tint = ChinarGold
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (attachedImagePath != null) "Pic" else "Add Pic",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -769,12 +1014,6 @@ fun PromptCard(
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Share",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         }
@@ -785,7 +1024,8 @@ fun PromptCard(
 fun ChecklistPageView(
     fontScale: Float,
     onReturnToCover: () -> Unit,
-    onOpenToc: () -> Unit
+    onOpenToc: () -> Unit,
+    onOpenBackgroundCustomizer: () -> Unit
 ) {
     val checklistItems = remember {
         listOf(
@@ -809,11 +1049,20 @@ fun ChecklistPageView(
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         item {
-            Text(
-                text = "Quick Customization Checklist",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Quick Customization Checklist",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                IconButton(onClick = onOpenBackgroundCustomizer) {
+                    Icon(Icons.Default.Wallpaper, contentDescription = "Change Background", tint = ChinarGold)
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -861,7 +1110,6 @@ fun ChecklistPageView(
         item {
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Pro Tip Card
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -889,7 +1137,6 @@ fun ChecklistPageView(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Navigation buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)

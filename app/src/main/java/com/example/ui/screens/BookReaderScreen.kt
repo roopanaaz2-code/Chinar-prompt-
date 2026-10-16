@@ -27,15 +27,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,7 +57,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -65,9 +65,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.data.AppThemeMode
 import com.example.data.BookRepository
 import com.example.data.PreferencesManager
+import com.example.data.PromptItem
 import com.example.ui.components.PageTurnContainer
 import com.example.ui.pages.PageDispatcher
 import com.example.ui.theme.ChinarGold
@@ -86,12 +86,16 @@ fun BookReaderScreen(
 
     var bookmarkedPages by remember { mutableStateOf(prefs.getBookmarkedPages()) }
     var favoritePromptIds by remember { mutableStateOf(prefs.getFavoritePromptIds()) }
+    var customPrompts by remember { mutableStateOf(prefs.getCustomPrompts()) }
+    var pageBgRefreshKey by remember { mutableIntStateOf(0) }
 
     var isDistractionFree by remember { mutableStateOf(false) }
     var showTocSheet by remember { mutableStateOf(false) }
     var showSearchScreen by remember { mutableStateOf(false) }
     var showBookmarksScreen by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showAddPromptDialog by remember { mutableStateOf(false) }
+    var showPageBgSheet by remember { mutableStateOf(false) }
     var isQuickSliderActive by remember { mutableStateOf(false) }
 
     val totalPages = BookRepository.pages.size
@@ -105,8 +109,10 @@ fun BookReaderScreen(
     }
 
     // Handle system back
-    BackHandler(enabled = showSearchScreen || showBookmarksScreen || showTocSheet || showSettingsDialog) {
+    BackHandler(enabled = showSearchScreen || showBookmarksScreen || showTocSheet || showSettingsDialog || showAddPromptDialog || showPageBgSheet) {
         when {
+            showAddPromptDialog -> showAddPromptDialog = false
+            showPageBgSheet -> showPageBgSheet = false
             showSearchScreen -> showSearchScreen = false
             showBookmarksScreen -> showBookmarksScreen = false
             showTocSheet -> showTocSheet = false
@@ -134,7 +140,7 @@ fun BookReaderScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -153,17 +159,17 @@ fun BookReaderScreen(
                                         .clip(CircleShape)
                                         .border(1.dp, ChinarGold, CircleShape)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Column {
                                     Text(
                                         text = "Chinar Prompts",
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
+                                        fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Page $currentPage of $totalPages",
-                                        fontSize = 11.sp,
+                                        text = "p. $currentPage of $totalPages",
+                                        fontSize = 10.sp,
                                         color = ChinarGold
                                     )
                                 }
@@ -171,6 +177,17 @@ fun BookReaderScreen(
 
                             // Reader Action Icons
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Add Prompt Button
+                                IconButton(onClick = { showAddPromptDialog = true }, modifier = Modifier.size(36.dp)) {
+                                    Icon(Icons.Default.Add, contentDescription = "Add Custom Prompt", tint = ChinarGold)
+                                }
+
+                                // Change Background Button
+                                IconButton(onClick = { showPageBgSheet = true }, modifier = Modifier.size(36.dp)) {
+                                    Icon(Icons.Default.Wallpaper, contentDescription = "Change Page Background", tint = MaterialTheme.colorScheme.onSurface)
+                                }
+
+                                // Bookmark Button
                                 IconButton(
                                     onClick = {
                                         val nowBookmarked = prefs.toggleBookmark(currentPage)
@@ -180,7 +197,8 @@ fun BookReaderScreen(
                                             if (nowBookmarked) "Page $currentPage bookmarked" else "Bookmark removed",
                                             Toast.LENGTH_SHORT
                                         ).show()
-                                    }
+                                    },
+                                    modifier = Modifier.size(36.dp)
                                 ) {
                                     Icon(
                                         imageVector = if (isCurrentBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
@@ -189,19 +207,23 @@ fun BookReaderScreen(
                                     )
                                 }
 
-                                IconButton(onClick = { showSearchScreen = true }) {
+                                // Search
+                                IconButton(onClick = { showSearchScreen = true }, modifier = Modifier.size(36.dp)) {
                                     Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onSurface)
                                 }
 
-                                IconButton(onClick = { showBookmarksScreen = true }) {
+                                // Favorites
+                                IconButton(onClick = { showBookmarksScreen = true }, modifier = Modifier.size(36.dp)) {
                                     Icon(Icons.Default.Star, contentDescription = "Saved", tint = ChinarGold)
                                 }
 
-                                IconButton(onClick = { showTocSheet = true }) {
+                                // TOC
+                                IconButton(onClick = { showTocSheet = true }, modifier = Modifier.size(36.dp)) {
                                     Icon(Icons.Default.MenuBook, contentDescription = "Contents", tint = MaterialTheme.colorScheme.onSurface)
                                 }
 
-                                IconButton(onClick = { showSettingsDialog = true }) {
+                                // Settings
+                                IconButton(onClick = { showSettingsDialog = true }, modifier = Modifier.size(36.dp)) {
                                     Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
@@ -276,7 +298,6 @@ fun BookReaderScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Previous Page
                                 IconButton(
                                     onClick = { navigateTo(currentPage - 1) },
                                     enabled = currentPage > 1
@@ -288,7 +309,6 @@ fun BookReaderScreen(
                                     )
                                 }
 
-                                // Page indicator / Quick slider toggle
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
@@ -309,7 +329,6 @@ fun BookReaderScreen(
                                     )
                                 }
 
-                                // Fullscreen Toggle
                                 IconButton(onClick = { isDistractionFree = true }) {
                                     Icon(
                                         Icons.Default.Fullscreen,
@@ -318,7 +337,6 @@ fun BookReaderScreen(
                                     )
                                 }
 
-                                // Next Page
                                 IconButton(
                                     onClick = { navigateTo(currentPage + 1) },
                                     enabled = currentPage < totalPages
@@ -335,7 +353,6 @@ fun BookReaderScreen(
                 }
             }
         ) { innerPadding ->
-            // Main 3D Page Turn Container
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -346,6 +363,11 @@ fun BookReaderScreen(
                         }
                     }
             ) {
+                // Read custom background for current page
+                val customBg = remember(currentPage, pageBgRefreshKey) {
+                    prefs.getPageBackgroundImage(currentPage)
+                }
+
                 PageTurnContainer(
                     currentPage = currentPage,
                     totalPages = totalPages,
@@ -355,10 +377,18 @@ fun BookReaderScreen(
                     modifier = Modifier.fillMaxSize()
                 ) { pageNumber ->
                     val pageObj = BookRepository.pages.find { it.pageNumber == pageNumber } ?: BookRepository.pages.first()
+                    val pageCustomPrompts = customPrompts.filter {
+                        it.pageNumber == pageNumber || (pageNumber in 4..27 && it.category == pageObj.category)
+                    }
+                    val pageBg = prefs.getPageBackgroundImage(pageNumber)
+
                     PageDispatcher(
                         page = pageObj,
                         fontScale = fontScale,
                         isBookmarked = bookmarkedPages.contains(pageNumber),
+                        prefs = prefs,
+                        customPromptsForPage = pageCustomPrompts,
+                        customBackgroundPath = pageBg,
                         onToggleBookmark = {
                             prefs.toggleBookmark(pageNumber)
                             bookmarkedPages = prefs.getBookmarkedPages()
@@ -368,11 +398,20 @@ fun BookReaderScreen(
                         onToggleFavoritePrompt = {
                             prefs.toggleFavoritePrompt(it)
                             favoritePromptIds = prefs.getFavoritePromptIds()
+                        },
+                        onOpenAddPrompt = { showAddPromptDialog = true },
+                        onOpenBackgroundCustomizer = { showPageBgSheet = true },
+                        onPromptImageUpdated = { promptId, newPath ->
+                            customPrompts = prefs.getCustomPrompts()
+                        },
+                        onDeleteCustomPrompt = { promptId ->
+                            prefs.deleteCustomPrompt(promptId)
+                            customPrompts = prefs.getCustomPrompts()
+                            Toast.makeText(context, "Prompt deleted", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }
 
-                // If in distraction free, show floating exit button
                 if (isDistractionFree) {
                     FloatingActionButton(
                         onClick = { isDistractionFree = false },
@@ -386,6 +425,32 @@ fun BookReaderScreen(
                     }
                 }
             }
+        }
+
+        // Add Custom Prompt Dialog
+        if (showAddPromptDialog) {
+            AddPromptDialog(
+                prefs = prefs,
+                defaultCategory = activePageObj.category,
+                defaultPage = currentPage,
+                onPromptAdded = { newPrompt ->
+                    customPrompts = prefs.getCustomPrompts()
+                },
+                onDismiss = { showAddPromptDialog = false }
+            )
+        }
+
+        // Page Background Customizer Sheet
+        if (showPageBgSheet) {
+            PageBackgroundSheet(
+                pageNumber = currentPage,
+                currentBgPath = prefs.getPageBackgroundImage(currentPage),
+                prefs = prefs,
+                onBackgroundChanged = {
+                    pageBgRefreshKey++
+                },
+                onDismiss = { showPageBgSheet = false }
+            )
         }
 
         // Table of Contents Sheet
