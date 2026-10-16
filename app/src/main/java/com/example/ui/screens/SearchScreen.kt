@@ -164,7 +164,7 @@ fun SearchScreen(
                 FilterChip(
                     selected = selectedFilter == "IMAGE",
                     onClick = { selectedFilter = "IMAGE" },
-                    label = { Text("Images (${BookRepository.allPrompts.count { it.type == \"IMAGE PROMPT\" }})") },
+                    label = { Text("Images (${BookRepository.allPrompts.count { it.type == "IMAGE PROMPT" }})") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = ChinarFlame,
                         selectedLabelColor = Color.White
@@ -175,7 +175,7 @@ fun SearchScreen(
                 FilterChip(
                     selected = selectedFilter == "VIDEO",
                     onClick = { selectedFilter = "VIDEO" },
-                    label = { Text("Videos (${BookRepository.allPrompts.count { it.type == \"VIDEO PROMPT\" }})") },
+                    label = { Text("Videos (${BookRepository.allPrompts.count { it.type == "VIDEO PROMPT" }})") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Color(0xFF4CC9F0),
                         selectedLabelColor = Color.Black
