@@ -86,6 +86,42 @@ class PreferencesManager(private val context: Context) {
         return getFavoritePromptIds().contains(promptId)
     }
 
+    // --- Built-in Prompt Overrides ---
+    // Edits are stored locally so the original offline catalog remains intact.
+    fun getPromptOverride(promptId: String): PromptItem? {
+        val raw = prefs.getString("prompt_override_$promptId", null) ?: return null
+        return try {
+            val obj = JSONObject(raw)
+            PromptItem(
+                id = obj.getString("id"),
+                globalNumber = obj.optInt("globalNumber", 0),
+                pageNumber = obj.optInt("pageNumber", 4),
+                category = obj.getString("category"),
+                title = obj.getString("title"),
+                type = obj.getString("type"),
+                text = obj.getString("text"),
+                imageUri = if (obj.has("imageUri") && !obj.isNull("imageUri")) obj.getString("imageUri") else null,
+                isCustom = false
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun savePromptOverride(prompt: PromptItem) {
+        val obj = JSONObject().apply {
+            put("id", prompt.id)
+            put("globalNumber", prompt.globalNumber)
+            put("pageNumber", prompt.pageNumber)
+            put("category", prompt.category)
+            put("title", prompt.title)
+            put("type", prompt.type)
+            put("text", prompt.text)
+            put("imageUri", prompt.imageUri ?: JSONObject.NULL)
+        }
+        prefs.edit().putString("prompt_override_${prompt.id}", obj.toString()).apply()
+    }
+
     // --- Custom Prompt Management ---
     fun getCustomPrompts(): List<PromptItem> {
         val raw = prefs.getString("custom_prompts_json", "[]") ?: "[]"

@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Share
@@ -87,6 +88,22 @@ import com.example.ui.theme.ChinarCrimson
 import com.example.ui.theme.ChinarFlame
 import java.io.File
 
+private fun categoryImageRes(categoryId: String): Int = when (categoryId) {
+    "miniature" -> R.drawable.category_1
+    "architecture" -> R.drawable.category_2
+    "portraits" -> R.drawable.category_3
+    "nature" -> R.drawable.category_4
+    "scifi" -> R.drawable.category_5
+    "food_product" -> R.drawable.category_6
+    "fantasy" -> R.drawable.category_7
+    "travel" -> R.drawable.category_8
+    "tech" -> R.drawable.category_9
+    "vehicles" -> R.drawable.category_10
+    "creator" -> R.drawable.category_11
+    "motion" -> R.drawable.category_12
+    else -> R.drawable.category_overview
+}
+
 @Composable
 fun PageDispatcher(
     page: BookPage,
@@ -101,6 +118,7 @@ fun PageDispatcher(
     onToggleFavoritePrompt: (String) -> Unit,
     onOpenAddPrompt: () -> Unit,
     onOpenBackgroundCustomizer: () -> Unit,
+    onEditPrompt: (PromptItem) -> Unit,
     onPromptImageUpdated: (promptId: String, newPath: String?) -> Unit,
     onDeleteCustomPrompt: (promptId: String) -> Unit
 ) {
@@ -161,6 +179,7 @@ fun PageDispatcher(
                     onToggleFavoritePrompt = onToggleFavoritePrompt,
                     onOpenAddPrompt = onOpenAddPrompt,
                     onOpenBackgroundCustomizer = onOpenBackgroundCustomizer,
+                    onEditPrompt = onEditPrompt,
                     onPromptImageUpdated = onPromptImageUpdated,
                     onDeleteCustomPrompt = onDeleteCustomPrompt
                 )
@@ -267,6 +286,15 @@ fun CoverPageView(
                     fontWeight = FontWeight.Bold
                 ),
                 color = ChinarFlame,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "This book published by Salman Udhas",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = ChinarGold,
                 textAlign = TextAlign.Center
             )
 
@@ -589,6 +617,16 @@ fun CategoryCardItem(
             modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Image(
+                painter = painterResource(id = categoryImageRes(category.id)),
+                contentDescription = "${category.name} category artwork",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(58.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, catColor.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+            )
+            Spacer(modifier = Modifier.width(12.dp))
             Box(
                 modifier = Modifier
                     .size(12.dp)
@@ -651,6 +689,7 @@ fun PromptsPageView(
     onToggleFavoritePrompt: (String) -> Unit,
     onOpenAddPrompt: () -> Unit,
     onOpenBackgroundCustomizer: () -> Unit,
+    onEditPrompt: (PromptItem) -> Unit,
     onPromptImageUpdated: (promptId: String, newPath: String?) -> Unit,
     onDeleteCustomPrompt: (promptId: String) -> Unit
 ) {
@@ -658,7 +697,7 @@ fun PromptsPageView(
     val categoryColor = categoryMeta?.let { Color(it.colorHex) } ?: ChinarGold
 
     val combinedPrompts = remember(page.prompts, customPrompts) {
-        page.prompts + customPrompts
+        page.prompts.map { prefs.getPromptOverride(it.id) ?: it } + customPrompts
     }
 
     LazyColumn(
@@ -720,6 +759,7 @@ fun PromptsPageView(
                 isFavorite = isPromptFavorite(prompt.id),
                 onToggleFavorite = { onToggleFavoritePrompt(prompt.id) },
                 onImageUpdated = { newPath -> onPromptImageUpdated(prompt.id, newPath) },
+                onEdit = { onEditPrompt(prompt) },
                 onDelete = if (prompt.isCustom) { { onDeleteCustomPrompt(prompt.id) } } else null
             )
             Spacer(modifier = Modifier.height(14.dp))
@@ -753,6 +793,7 @@ fun PromptCard(
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
     onImageUpdated: (String?) -> Unit,
+    onEdit: () -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -851,6 +892,15 @@ fun PromptCard(
                     )
                 }
 
+                IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Prompt",
+                        tint = ChinarGold,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
                 if (onDelete != null) {
                     IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                         Icon(
@@ -876,7 +926,11 @@ fun PromptCard(
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         AsyncImage(
-                            model = File(attachedImagePath),
+                            model = if (attachedImagePath.startsWith("android.resource://")) {
+                                Uri.parse(attachedImagePath)
+                            } else {
+                                File(attachedImagePath)
+                            },
                             contentDescription = "Generated AI Result",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop

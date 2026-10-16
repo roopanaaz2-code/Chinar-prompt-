@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -37,7 +38,7 @@ fun ImageViewerDialog(
                 .clickable { onDismiss() }
         ) {
             AsyncImage(
-                model = File(imagePath),
+                model = if (imagePath.startsWith("android.resource://")) Uri.parse(imagePath) else File(imagePath),
                 contentDescription = "Full Generated Picture",
                 modifier = Modifier
                     .fillMaxSize()

@@ -78,7 +78,8 @@ fun SearchScreen(
     val filteredResults by remember(query, selectedFilter) {
         derivedStateOf {
             val q = query.trim().lowercase()
-            val allItems = BookRepository.allPrompts + com.example.data.PreferencesManager(context).getCustomPrompts()
+            val prefs = com.example.data.PreferencesManager(context)
+            val allItems = BookRepository.allPrompts.map { prefs.getPromptOverride(it.id) ?: it } + prefs.getCustomPrompts()
             allItems.filter { prompt ->
                 val matchesType = when (selectedFilter) {
                     "IMAGE" -> prompt.type == "IMAGE PROMPT"
@@ -163,7 +164,7 @@ fun SearchScreen(
                 FilterChip(
                     selected = selectedFilter == "IMAGE",
                     onClick = { selectedFilter = "IMAGE" },
-                    label = { Text("Images (109)") },
+                    label = { Text("Images (${BookRepository.allPrompts.count { it.type == \"IMAGE PROMPT\" }})") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = ChinarFlame,
                         selectedLabelColor = Color.White
@@ -174,7 +175,7 @@ fun SearchScreen(
                 FilterChip(
                     selected = selectedFilter == "VIDEO",
                     onClick = { selectedFilter = "VIDEO" },
-                    label = { Text("Videos (10)") },
+                    label = { Text("Videos (${BookRepository.allPrompts.count { it.type == \"VIDEO PROMPT\" }})") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Color(0xFF4CC9F0),
                         selectedLabelColor = Color.Black

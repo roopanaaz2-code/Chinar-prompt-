@@ -75,18 +75,19 @@ fun AddPromptDialog(
     prefs: PreferencesManager,
     defaultCategory: String = "Miniature Worlds",
     defaultPage: Int = 4,
+    editPrompt: PromptItem? = null,
     onPromptAdded: (PromptItem) -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    var title by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf(defaultCategory) }
+    var title by remember { mutableStateOf(editPrompt?.title ?: "") }
+    var category by remember { mutableStateOf(editPrompt?.category ?: defaultCategory) }
     var isCategoryDropdownExpanded by remember { mutableStateOf(false) }
-    var promptType by remember { mutableStateOf("IMAGE PROMPT") }
-    var promptText by remember { mutableStateOf("") }
-    var selectedImagePath by remember { mutableStateOf<String?>(null) }
+    var promptType by remember { mutableStateOf(editPrompt?.type ?: "IMAGE PROMPT") }
+    var promptText by remember { mutableStateOf(editPrompt?.text ?: "") }
+    var selectedImagePath by remember { mutableStateOf(editPrompt?.imageUri ?: editPrompt?.let { prefs.getPromptImageUri(it.id) }) }
 
     // Android Zero-permission Photo Picker
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -123,7 +124,7 @@ fun AddPromptDialog(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Add Custom Prompt",
+                    text = if (editPrompt == null) "Add Custom Prompt" else "Edit Prompt",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -251,7 +252,7 @@ fun AddPromptDialog(
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         AsyncImage(
-                            model = File(selectedImagePath!!),
+                            model = if (selectedImagePath!!.startsWith("android.resource://")) Uri.parse(selectedImagePath!!) else File(selectedImagePath!!),
                             contentDescription = "Attached Result",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
@@ -293,21 +294,21 @@ fun AddPromptDialog(
                         return@Button
                     }
                     val catObj = BookRepository.categories.find { it.name == category }
-                    val pageNum = catObj?.startPage ?: defaultPage
-                    val newPrompt = PromptItem(
-                        id = "custom_${UUID.randomUUID().toString().take(8)}",
-                        globalNumber = 120 + prefs.getCustomPrompts().size,
+                    val pageNum = if (editPrompt == null) catObj?.startPage ?: defaultPage else editPrompt.pageNumber
+                    val savedPrompt = PromptItem(
+                        id = editPrompt?.id ?: "custom_${UUID.randomUUID().toString().take(8)}",
+                        globalNumber = editPrompt?.globalNumber ?: 120 + prefs.getCustomPrompts().size,
                         pageNumber = pageNum,
                         category = category,
                         title = title.trim(),
                         type = promptType,
                         text = promptText.trim(),
                         imageUri = selectedImagePath,
-                        isCustom = true
+                        isCustom = editPrompt?.isCustom ?: true
                     )
-                    prefs.saveCustomPrompt(newPrompt)
-                    onPromptAdded(newPrompt)
-                    Toast.makeText(context, "Custom prompt saved to book!", Toast.LENGTH_SHORT).show()
+                    if (savedPrompt.isCustom) prefs.saveCustomPrompt(savedPrompt) else prefs.savePromptOverride(savedPrompt)
+                    onPromptAdded(savedPrompt)
+                    Toast.makeText(context, if (editPrompt == null) "Custom prompt saved to book!" else "Prompt updated offline!", Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },
                 modifier = Modifier
@@ -320,7 +321,7 @@ fun AddPromptDialog(
                 )
             ) {
                 Text(
-                    text = "Save Prompt to Book",
+                    text = if (editPrompt == null) "Save Prompt to Book" else "Save Changes",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )

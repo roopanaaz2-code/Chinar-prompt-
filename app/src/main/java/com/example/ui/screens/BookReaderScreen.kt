@@ -95,6 +95,7 @@ fun BookReaderScreen(
     var showBookmarksScreen by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAddPromptDialog by remember { mutableStateOf(false) }
+    var promptBeingEdited by remember { mutableStateOf<PromptItem?>(null) }
     var showPageBgSheet by remember { mutableStateOf(false) }
     var isQuickSliderActive by remember { mutableStateOf(false) }
 
@@ -111,7 +112,7 @@ fun BookReaderScreen(
     // Handle system back
     BackHandler(enabled = showSearchScreen || showBookmarksScreen || showTocSheet || showSettingsDialog || showAddPromptDialog || showPageBgSheet) {
         when {
-            showAddPromptDialog -> showAddPromptDialog = false
+            showAddPromptDialog -> { showAddPromptDialog = false; promptBeingEdited = null }
             showPageBgSheet -> showPageBgSheet = false
             showSearchScreen -> showSearchScreen = false
             showBookmarksScreen -> showBookmarksScreen = false
@@ -400,6 +401,7 @@ fun BookReaderScreen(
                             favoritePromptIds = prefs.getFavoritePromptIds()
                         },
                         onOpenAddPrompt = { showAddPromptDialog = true },
+                        onEditPrompt = { promptBeingEdited = it; showAddPromptDialog = true },
                         onOpenBackgroundCustomizer = { showPageBgSheet = true },
                         onPromptImageUpdated = { promptId, newPath ->
                             customPrompts = prefs.getCustomPrompts()
@@ -433,10 +435,11 @@ fun BookReaderScreen(
                 prefs = prefs,
                 defaultCategory = activePageObj.category,
                 defaultPage = currentPage,
+                editPrompt = promptBeingEdited,
                 onPromptAdded = { newPrompt ->
                     customPrompts = prefs.getCustomPrompts()
                 },
-                onDismiss = { showAddPromptDialog = false }
+                onDismiss = { showAddPromptDialog = false; promptBeingEdited = null }
             )
         }
 

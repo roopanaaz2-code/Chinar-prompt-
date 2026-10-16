@@ -1,5 +1,7 @@
 package com.example.data
 
+import com.example.R
+
 data class PromptItem(
     val id: String,
     val globalNumber: Int,
@@ -1268,7 +1270,17 @@ object BookRepository {
             title = "Funny Village Chase — Video",
             type = "VIDEO PROMPT",
             text = "■ Create a 12–15 second comedic vertical 9:16 video in a rural South Asian village lane. A fictional man in slightly worn traditional clothes jogs after a mischievous hen; the hen darts around a basket, the man slips harmlessly on loose straw and sits down in surprise, while the hen confidently struts away. Use realistic body mechanics, clear continuous movement, a wide shot followed by a medium shot, natural village ambience, playful sound effects, and consistent faces/clothing. No injury, no dangerous fall, no sudden character changes, no captions, no watermark."
-        )
+        ),
+        PromptItem("p120", 120, 18, "Travel & Culture", "Alpine Lake Footbridge", "IMAGE PROMPT", "Create a photorealistic vertical 9:16 travel image of a clear alpine lake beneath snow-covered mountains, with a weathered wooden footbridge crossing a narrow stream in the foreground. Golden sunrise, crisp reflections, natural atmospheric depth, premium travel-magazine detail, no text or watermark.", "android.resource://com.example/${R.drawable.new_prompt_mountain_lake}"),
+        PromptItem("p121", 121, 18, "Travel & Culture", "Terraced Valley Village", "IMAGE PROMPT", "Generate a cinematic 9:16 photograph of a peaceful mountain village in a green terraced valley. Show stone-and-timber homes, footpaths, vegetable gardens, morning mist, and dramatic peaks. Authentic rural South Asian atmosphere, realistic materials, no text or watermark.", "android.resource://com.example/${R.drawable.new_prompt_village_valley}"),
+        PromptItem("p122", 122, 18, "Travel & Culture", "Stone Bridge Over Turquoise River", "IMAGE PROMPT", "Create an ultra-realistic vertical 9:16 travel photograph of a graceful old stone bridge over a turquoise river between forested mountains. Soft golden-hour light, believable stone texture, gentle water movement, cinematic composition, no text or watermark.", "android.resource://com.example/${R.drawable.new_prompt_river_bridge}"),
+        PromptItem("p123", 123, 18, "Travel & Culture", "Snow Pass Village Road", "IMAGE PROMPT", "Create a photorealistic 9:16 image of a winding mountain pass after fresh snowfall, leading toward a tiny village with colorful prayer flags. Layered snowy peaks, atmospheric haze, natural footprints, realistic winter light, no text or watermark.", "android.resource://com.example/${R.drawable.new_prompt_snow_pass}"),
+        PromptItem("p124", 124, 18, "Travel & Culture", "Riverside Hamlet at Dusk", "IMAGE PROMPT", "Generate a cinematic vertical 9:16 photograph of a quiet riverside hamlet at dusk. Include wooden homes, warm window lights, a small suspension bridge, mist above the river, and mountains in silhouette. Realistic travel photography, no text or watermark.", "android.resource://com.example/${R.drawable.new_prompt_riverside_hamlet}"),
+        PromptItem("p125", 125, 19, "Travel & Culture", "Mountain Market Morning", "IMAGE PROMPT", "Create a photorealistic 9:16 scene of a lively highland village market beside a mountain river. Local stalls, woven baskets, colorful fabrics, distant peaks, and soft morning light create an authentic sense of place. No brand logos, no text, no watermark.", "android.resource://com.example/${R.drawable.new_prompt_village_valley}"),
+        PromptItem("p126", 126, 19, "Travel & Culture", "Bridge to the Cedar Village", "IMAGE PROMPT", "Create a cinematic vertical 9:16 image of a narrow suspension bridge leading to a cedar forest village, with a clear river below and layered mountains beyond. Realistic cables, timber, people for scale, atmospheric perspective, no text or watermark.", "android.resource://com.example/${R.drawable.new_prompt_river_bridge}"),
+        PromptItem("p127", 127, 19, "Travel & Culture", "Glacier Valley Hike", "IMAGE PROMPT", "Generate an ultra-realistic 9:16 travel photograph of a hiker approaching a glacier valley, with a mountain stream, wild grasses, rugged peaks, and a tiny village far behind. Natural daylight, realistic scale and terrain, no text or watermark.", "android.resource://com.example/${R.drawable.new_prompt_mountain_lake}"),
+        PromptItem("p128", 128, 19, "Travel & Culture", "Monsoon River Crossing", "IMAGE PROMPT", "Create a photorealistic vertical 9:16 image of a stone footbridge crossing a fast but safe monsoon river near a lush mountain village. Wet stones, moss, misty ridges, and warm homes in the distance, documentary travel style, no text or watermark.", "android.resource://com.example/${R.drawable.new_prompt_riverside_hamlet}"),
+        PromptItem("p129", 129, 19, "Travel & Culture", "Sunset Village Panorama", "IMAGE PROMPT", "Create a beautiful cinematic 9:16 panorama of a mountain village glowing at sunset, terraced fields descending toward a winding river and an old bridge. Warm rim light, detailed architecture, realistic atmospheric depth, no text or watermark.", "android.resource://com.example/${R.drawable.new_prompt_snow_pass}")
     )
 
     val pages: List<BookPage> = buildPages()
