@@ -24,7 +24,7 @@ class ExampleRobolectricTest {
     @Test
     fun `verify book data integrity`() {
         assertEquals(28, BookRepository.pages.size)
-        assertEquals(119, BookRepository.allPrompts.size)
+        assertEquals(129, BookRepository.allPrompts.size)
         assertEquals(12, BookRepository.categories.size)
         assertTrue(BookRepository.allPrompts.all { it.text.isNotBlank() })
     }
