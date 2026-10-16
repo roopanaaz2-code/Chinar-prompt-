@@ -1,6 +1,6 @@
 # 🍁 Chinar Prompts — The Modern AI Prompt Book
 
-[![Android CI](https://github.com/actions/workflows/build-apk.yml/badge.svg)](https://github.com)
+[![Android CI](https://github.com/actions/workflows/android-build.yml/badge.svg)](https://github.com)
 [![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B%20%28API%2024%E2%80%9336%29-blue.svg)](https://developer.android.com)
 [![Language](https://img.shields.io/badge/Language-Kotlin-purple.svg)](https://kotlinlang.org)
 [![UI](https://img.shields.io/badge/UI-Jetpack%20Compose%20%2B%20Material%203-green.svg)](https://developer.android.com/jetpack/compose)
@@ -46,7 +46,7 @@ An animated, premium digital ebook and reference reader for **"The Modern AI Pro
 1. Navigate to the **Actions** tab on your GitHub repository.
 2. Click on the latest workflow run named **"Build & Release Android APK"**.
 3. Scroll down to the **Artifacts** section at the bottom of the page.
-4. Click **`chinar-prompts-debug-apk`** to download the zip file containing `app-debug.apk`.
+4. Click **`android-debug-apk`** to download the zip file containing `app-debug.apk`.
 5. Unzip and transfer `app-debug.apk` to your Android device to install!
 
 ### Option B: From GitHub Releases
