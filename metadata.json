@@ -1,0 +1,6 @@
+{
+  "name": "Chinar Prompt Book",
+  "description": "An exquisite 28-page animated prompt book with 100+ AI prompts, royal Chinar tree branding, interactive 3D page turns, custom card styles, and prompt playground.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
