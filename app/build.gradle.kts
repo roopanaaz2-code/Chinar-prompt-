@@ -1,9 +1,9 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
 
 val admobAppId = project.findProperty("ADMOB_APP_ID")?.toString()
-    ?: "ca-app-pub-3940256099942544~3347511713"
+    ?: "ca-app-pub-9824029664771146~9582260329"
 val admobBannerId = project.findProperty("ADMOB_BANNER_ID")?.toString()
-    ?: "ca-app-pub-3940256099942544/9214589741"
+    ?: "ca-app-pub-9824029664771146/5643015311"
 
 plugins {
   alias(libs.plugins.android.application)
