@@ -11,13 +11,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.data.PreferencesManager
+import com.example.ads.AdMobAds
 import com.example.ui.screens.BookReaderScreen
 import com.example.ui.theme.ChinarBookTheme
 
 class MainActivity : ComponentActivity() {
+    private var adsReady by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        AdMobAds.initialize(this) { adsReady = true }
 
         val prefs = PreferencesManager(applicationContext)
 
@@ -27,6 +31,7 @@ class MainActivity : ComponentActivity() {
             ChinarBookTheme(themeMode = currentTheme) {
                 BookReaderScreen(
                     prefs = prefs,
+                    adsReady = adsReady,
                     modifier = Modifier.fillMaxSize()
                 )
             }

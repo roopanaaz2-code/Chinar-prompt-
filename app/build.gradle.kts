@@ -1,5 +1,10 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
 
+val admobAppId = project.findProperty("ADMOB_APP_ID")?.toString()
+    ?: "ca-app-pub-3940256099942544~3347511713"
+val admobBannerId = project.findProperty("ADMOB_BANNER_ID")?.toString()
+    ?: "ca-app-pub-3940256099942544/9214589741"
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
@@ -18,6 +23,8 @@ android {
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
+    manifestPlaceholders["ADMOB_APP_ID"] = admobAppId
+    buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"$admobBannerId\"")
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -126,6 +133,8 @@ dependencies {
   implementation(libs.okhttp)
   // implementation(libs.play.services.location)
   implementation(libs.retrofit)
+  implementation("com.google.android.gms:play-services-ads:25.5.0")
+  implementation("com.google.android.ump:user-messaging-platform:4.0.0")
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)

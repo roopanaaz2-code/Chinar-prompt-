@@ -68,6 +68,7 @@ import com.example.R
 import com.example.data.BookRepository
 import com.example.data.PreferencesManager
 import com.example.data.PromptItem
+import com.example.ads.AdMobBanner
 import com.example.ui.components.PageTurnContainer
 import com.example.ui.pages.PageDispatcher
 import com.example.ui.theme.ChinarGold
@@ -76,6 +77,7 @@ import com.example.ui.theme.ChinarFlame
 @Composable
 fun BookReaderScreen(
     prefs: PreferencesManager,
+    adsReady: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -348,6 +350,9 @@ fun BookReaderScreen(
                                     )
                                 }
                             }
+                        }
+                        if (adsReady) {
+                            AdMobBanner(modifier = Modifier.padding(top = 6.dp))
                         }
                     }
                 }
