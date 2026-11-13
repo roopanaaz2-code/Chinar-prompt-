@@ -96,6 +96,7 @@ fun BookReaderScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAddPromptDialog by remember { mutableStateOf(false) }
     var showPageBgSheet by remember { mutableStateOf(false) }
+    var showImageCommandStudio by remember { mutableStateOf(false) }
     var isQuickSliderActive by remember { mutableStateOf(false) }
 
     val totalPages = BookRepository.pages.size
@@ -109,8 +110,9 @@ fun BookReaderScreen(
     }
 
     // Handle system back
-    BackHandler(enabled = showSearchScreen || showBookmarksScreen || showTocSheet || showSettingsDialog || showAddPromptDialog || showPageBgSheet) {
+    BackHandler(enabled = showImageCommandStudio || showSearchScreen || showBookmarksScreen || showTocSheet || showSettingsDialog || showAddPromptDialog || showPageBgSheet) {
         when {
+            showImageCommandStudio -> showImageCommandStudio = false
             showAddPromptDialog -> showAddPromptDialog = false
             showPageBgSheet -> showPageBgSheet = false
             showSearchScreen -> showSearchScreen = false
@@ -128,7 +130,7 @@ fun BookReaderScreen(
         Scaffold(
             topBar = {
                 AnimatedVisibility(
-                    visible = !isDistractionFree,
+                    visible = !isDistractionFree && !showImageCommandStudio,
                     enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
                     exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
                 ) {
@@ -238,6 +240,20 @@ fun BookReaderScreen(
                             color = ChinarGold,
                             trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
                         )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(ChinarGold.copy(alpha = 0.13f))
+                                .clickable { showImageCommandStudio = true }
+                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text("✦  AI IMAGE COMMAND STUDIO  •  1,000 PROMPTS  →", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ChinarGold)
+                        }
                     }
                 }
             },
@@ -491,6 +507,10 @@ fun BookReaderScreen(
                 onNavigateToPage = { navigateTo(it) },
                 onClose = { showBookmarksScreen = false }
             )
+        }
+
+        if (showImageCommandStudio) {
+            ImageCommandStudio(onClose = { showImageCommandStudio = false })
         }
 
         // Settings Dialog
